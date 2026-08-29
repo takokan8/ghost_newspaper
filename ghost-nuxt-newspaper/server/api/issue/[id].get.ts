@@ -1,11 +1,22 @@
 import { getIssue } from '../../../lib/getIssue'
 import { createGhostClient } from '../../../lib/ghostClient'
+import { createMockGhostClient } from '../../../lib/mockGhostClient'
 import { IssueValidationError } from '../../../lib/validateIssue'
+import type { GhostClient } from '../../../lib/getIssue'
 
-const ghost = createGhostClient({
-  url: useRuntimeConfig().ghostUrl,
-  contentApiKey: useRuntimeConfig().ghostContentApiKey
-})
+// MOCK_GHOST=true の場合、実際のGhost APIには問い合わせず
+// 合成データを返すモッククライアントを使う。
+// issues.json の読み込み・バリデーション・マージ処理(getIssue)は
+// 通常通り本物のロジックが動くため、レイアウト確認や紙面構成の
+// 動作確認をGhost未接続の状態でも行える。
+const useMock = process.env.MOCK_GHOST === 'true'
+
+const ghost: GhostClient = useMock
+  ? createMockGhostClient()
+  : createGhostClient({
+      url: useRuntimeConfig().ghostUrl,
+      contentApiKey: useRuntimeConfig().ghostContentApiKey
+    })
 
 const ISSUES_DIR = './data/issues'
 
@@ -25,6 +36,9 @@ export default defineEventHandler(async (event) => {
 
   try {
     const issue = await getIssue(ISSUES_DIR, id, ghost)
+    if (useMock) {
+      console.warn(`[MOCK_GHOST] Issue "${id}" served with synthetic article data`)
+    }
     return issue
   } catch (err) {
     if (err instanceof IssueValidationError) {

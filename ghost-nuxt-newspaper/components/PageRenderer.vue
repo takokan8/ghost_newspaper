@@ -1,30 +1,41 @@
 <script setup lang="ts">
+import type { Component } from 'vue'
 import type { MergedIssueItem } from '~/types/issue'
+import ArticleLead from './ArticleLead.vue'
+import ArticleColumn from './ArticleColumn.vue'
+import ArticleSmall from './ArticleSmall.vue'
+import AdPlaceholder from './AdPlaceholder.vue'
+import IndexPlaceholder from './IndexPlaceholder.vue'
 
 const props = defineProps<{
   items: MergedIssueItem[]
 }>()
 
-const componentMap: Record<string, string> = {
-  lead: 'ArticleLead',
-  column: 'ArticleColumn',
-  small: 'ArticleSmall',
-  ad: 'AdPlaceholder',
-  index: 'IndexPlaceholder'
+// 文字列名ではなく、実際にimportしたコンポーネント定義をマップする。
+// Nuxtのコンポーネント自動インポートは <component :is="文字列"> のような
+// 動的参照を解決できない(テンプレート内の静的タグしか検出しないため)。
+// 明示的にimportし、コンポーネントオブジェクトそのものをマップの値にすることで
+// 実行時にも確実に解決できるようにする。
+const componentMap: Record<string, Component> = {
+  lead: ArticleLead,
+  column: ArticleColumn,
+  small: ArticleSmall,
+  ad: AdPlaceholder,
+  index: IndexPlaceholder
 }
 
-function resolveComponentName(item: MergedIssueItem): string {
+function resolveComponent(item: MergedIssueItem): Component {
   if (item.type === 'article') {
-    return componentMap[item.layout ?? 'column'] ?? 'ArticleColumn'
+    return componentMap[item.layout ?? 'column'] ?? ArticleColumn
   }
-  return componentMap[item.type] ?? 'ArticleColumn'
+  return componentMap[item.type] ?? ArticleColumn
 }
 </script>
 
 <template>
   <div class="page-renderer">
     <component
-      :is="resolveComponentName(item)"
+      :is="resolveComponent(item)"
       v-for="(item, index) in items"
       :key="index"
       :item="item"

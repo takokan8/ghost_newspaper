@@ -126,14 +126,18 @@ describe('POST /api/webhook/ghost', () => {
     }
   })
 
-  it('形式Aのペイロードでキャッシュ無効化を実行する', async () => {
+  // 注意: findIssuesContainingSlug は実際の ./data/issues をファイルシステムから
+  // 読む実装のため、このテストのslugが data/issues/*.json 内の実データと
+  // 衝突すると期待値が変わってしまう。「該当する号が見つからない」ケースを
+  // 検証する目的なので、実データに存在しないことが明らかなslugを使う。
+  it('形式Aのペイロードでキャッシュ無効化を実行する(該当号なし)', async () => {
     mockGetKeys.mockResolvedValue([])
 
     const event = createMockEvent({
       event: 'post.published',
       post: {
-        current: { slug: 'hello-ghost', status: 'published' },
-        previous: { slug: 'hello-ghost', status: 'draft' }
+        current: { slug: 'unmatched-test-slug-a', status: 'published' },
+        previous: { slug: 'unmatched-test-slug-a', status: 'draft' }
       }
     })
 
@@ -142,12 +146,12 @@ describe('POST /api/webhook/ghost', () => {
     expect(result).toEqual({ success: true, invalidatedIssues: [] })
   })
 
-  it('形式Bのペイロードでもキャッシュ無効化を実行する', async () => {
+  it('形式Bのペイロードでもキャッシュ無効化を実行する(該当号なし)', async () => {
     mockGetKeys.mockResolvedValue([])
 
     const event = createMockEvent({
       event: 'post.published',
-      post: { slug: 'hello-ghost', status: 'published' }
+      post: { slug: 'unmatched-test-slug-b', status: 'published' }
     })
 
     const result = await webhookHandler(event)
@@ -245,5 +249,19 @@ describe('POST /api/webhook/ghost', () => {
     const result = await webhookHandler(event)
 
     expect(result).toEqual({ success: true, invalidatedIssues: [] })
+  })
+
+  it('data/issues 内の実データに一致するslugでは該当号がinvalidatedIssuesに含まれる', async () => {
+    mockGetKeys.mockResolvedValue([])
+
+    // data/issues/2026-08.json の 1面 に "hello-ghost" が含まれている前提
+    const event = createMockEvent({
+      event: 'post.published',
+      post: { slug: 'hello-ghost', status: 'published' }
+    })
+
+    const result = await webhookHandler(event)
+
+    expect(result).toEqual({ success: true, invalidatedIssues: ['2026-08'] })
   })
 })

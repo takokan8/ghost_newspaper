@@ -1,0 +1,17 @@
+{
+  "id": "2026-08",
+  "title": "2026年8月号",
+  "publishedAt": "2026-08-27",
+  "pages": {
+    "1": [
+      { "type": "article", "article": "hello-ghost", "layout": "lead" },
+      { "type": "article", "article": "second-post", "layout": "column" },
+      { "type": "article", "article": "third-post", "layout": "small" },
+      { "type": "ad", "layout": "half-page" },
+      { "type": "index" }
+    ],
+    "2": [
+      { "type": "article", "article": "fourth-post", "layout": "column" }
+    ]
+  }
+}
